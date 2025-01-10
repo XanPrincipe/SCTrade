@@ -27,7 +27,6 @@ def update_sum(entries, comboboxes, prices, prices_dict, result_label):
     except KeyError:
         result_label.config(text="Ошибка выбора!")
 
-
 def apply_theme(widget):
     widget.configure(
         bg=PRIMARY_COLOR,

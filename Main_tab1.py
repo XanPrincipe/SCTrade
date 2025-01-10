@@ -17,7 +17,8 @@ data_file = 'prices.txt'
 prices = load_data_from_file(data_file)
 combobox_values = list(prices.keys())
 
-
+comboboxes = []
+entries = []
 
 
 def create_main_tab(notebook, window, copybook):
@@ -31,37 +32,16 @@ def create_main_tab(notebook, window, copybook):
     notebook = Notebook(window)
     notebook.pack(expand=True, fill="both", padx=10, pady=10)
 
+    for _ in range(4):
+        combobox = Combobox(tab1, font=("Consolas", 12), values=combobox_values)
+        combobox.pack(pady=5)
+        comboboxes.append(combobox)  # Добавляем в список
 
-    combobox1 = Combobox(tab1, font=("Consolas", 12), values=combobox_values)
-    combobox1.pack(pady=5)
+        entry = Entry(tab1, font=("Consolas", 12), width=22, bg=ENTRY_BG, fg=TEXT_COLOR)
+        entry.pack(pady=5)
+        apply_theme(entry)
+        entries.append(entry)
 
-
-    entry1 = Entry(tab1, font=("Consolas", 12), width=22, bg=ENTRY_BG, fg=TEXT_COLOR)
-    entry1.pack(pady=5)
-    apply_theme(entry1)
-
-    combobox2 = Combobox(tab1, font=("Consolas", 12), values=combobox_values)
-    combobox2.pack(pady=5)
-
-
-    entry2 = Entry(tab1, font=("Consolas", 12), width=22, bg=ENTRY_BG, fg=TEXT_COLOR)
-    entry2.pack(pady=5)
-    apply_theme(entry2)
-
-    combobox3 = Combobox(tab1, font=("Consolas", 12), values=combobox_values)
-    combobox3.pack(pady=5)
-
-
-    entry3 = Entry(tab1, font=("Consolas", 12), width=22, bg=ENTRY_BG, fg=TEXT_COLOR)
-    entry3.pack(pady=5)
-    apply_theme(entry3)
-
-    combobox4 = Combobox(tab1, font=("Consolas", 12), values=combobox_values)
-    combobox4.pack(pady=5)
-
-    entry4 = Entry(tab1, font=("Consolas", 12), width=22, bg=ENTRY_BG, fg=TEXT_COLOR,insertbackground="#00ff00")
-    entry4.pack(pady=5)
-    apply_theme(entry4)
 
     def copy_to_clipboard(event=None):
         result_sum = result_label.cget("text")
@@ -98,42 +78,38 @@ def create_main_tab(notebook, window, copybook):
     notification_label = Label(tab1, font=("Consolas", 12), text="", fg=ACCENT_COLOR, bg=PRIMARY_COLOR)
     notification_label.pack(pady=7)
 
-    entry1_var = StringVar()
-    entry2_var = StringVar()
-    entry3_var = StringVar()
-    entry4_var = StringVar()
-    combobox1_var = StringVar()
-    combobox2_var = StringVar()
-    combobox3_var = StringVar()
-    combobox4_var = StringVar()
+    def update_sum(*args):
+        try:
+            # Получаем цены, связанные с выбранными элементами
+            selected_prices = [prices.get(cb.get(), 0) for cb in comboboxes]
 
-    entry1.config(textvariable=entry1_var)
-    entry2.config(textvariable=entry2_var)
-    entry3.config(textvariable=entry3_var)
-    entry4.config(textvariable=entry4_var)
-    combobox1.config(textvariable=combobox1_var)
-    combobox2.config(textvariable=combobox2_var)
-    combobox3.config(textvariable=combobox3_var)
-    combobox4.config(textvariable=combobox4_var)
+            # Получаем количества из полей ввода
+            quantities = [int(entry.get()) if entry.get() else 0 for entry in entries]
 
-    entry1_var.trace_add('write', update_sum)
-    entry2_var.trace_add('write', update_sum)
-    entry3_var.trace_add('write', update_sum)
-    entry4_var.trace_add('write', update_sum)
-    combobox1_var.trace_add('write', update_sum)
-    combobox2_var.trace_add('write', update_sum)
-    combobox3_var.trace_add('write', update_sum)
-    combobox4_var.trace_add('write', update_sum)
+            # Считаем общую сумму
+            total = sum(price * qty for price, qty in zip(selected_prices, quantities))
+
+            total_str = f"{int(total):,}".replace(",", " ")
+
+            # Обновляем текст метки с результатом
+            result_label.config(text=total_str)
+        except ValueError:
+            result_label.config(text="Ошибка ввода!")
+        except KeyError:
+            result_label.config(text="Ошибка выбора!")
+
+
+    for combobox in comboboxes:
+        combobox.bind("<<ComboboxSelected>>", update_sum)
+    for entry in entries:
+        entry.bind("<KeyRelease>", update_sum)
 
     def show_copy_notification():
         notification_label.config(text="Текст скопирован в буфер обмена!")
 
-
     def clear_entries():
-        entry1_var.set("")
-        entry2_var.set("")
-        entry3_var.set("")
-        entry4_var.set("")
+        for entry in entries:
+            entry.delete(0, END)
         update_sum()
 
     save_data_to_file(data_file,prices)
