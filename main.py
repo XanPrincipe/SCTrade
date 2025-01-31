@@ -19,7 +19,7 @@ notebook.pack(expand=True, fill="both", padx=10, pady=10)
 
 tab2, copybook = create_spam_tab(notebook)
 tab1 = create_main_tab(notebook, window, copybook)
-tab3 = create_prices_tab(notebook)
+tab3 = create_prices_tab(notebook, window)
 
 # Добавление вкладок в Notebook
 notebook.insert(0,tab1, text='Главная')
