@@ -73,18 +73,22 @@ def save_data_to_file(file_path, data):
 
 
 def on_close(copybook, window):
-    save_text(copybook)
+    global save_file
+    if save_file:  # Проверяем, был ли ранее выбран файл
+        save_text(copybook)  # Сохраняем только если уже есть файл
     window.destroy()
 
+save_file = None
+
 def save_text(copybook):
-    global save_file
-    if not save_file:
-        save_file = fd.askopenfilename(
+    global save_file  # Указываем, что используем глобальную переменную
+    if not save_file:  # Если save_file еще не задан
+        save_file = fd.askopenfilename(  # Открывается диалог сохранения
             title='Сохранить как',
             defaultextension='.txt',
             filetypes=[('Текстовые файлы', '*.txt'), ("Все файлы", "*.*")]
         )
-    if save_file:
-        content = copybook.get(1.0, "end-1c")
+    if save_file:  # Если файл был выбран
+        content = copybook.get(1.0, "end-1c")  # Получаем содержимое
         with open(save_file, 'w', encoding="UTF-8") as f:
             f.write(content)

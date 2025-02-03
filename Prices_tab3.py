@@ -3,6 +3,7 @@ from utils2 import apply_theme, apply_button_theme, update_sum
 from PIL import Image, ImageTk
 from tkinter import messagebox
 
+
 PRIMARY_COLOR = "#1C1C1C"  # Тёмный фон
 SECONDARY_COLOR = "#2A2A2A"  # Для второстепенных элементов
 ACCENT_COLOR = "#DE9E07"  # Оранжевый акцент
@@ -32,10 +33,10 @@ def load_prices():
         pass  # Если файла нет, возвращаем пустой словарь
     return prices
 
-def create_prices_tab(notebook, window):
-    """Создаёт вкладку с полями ввода и кнопками."""
+def create_prices_tab(notebook, window, update_main_tab, clear_entries):
+    """Создаёт вкладку с редактированием цен."""
     tab3 = Frame(notebook, bg=PRIMARY_COLOR, padx=5, pady=5)
-    rows = []
+    notebook.add(tab3, text="Редактирование цен")
 
     # Фрейм с канвасом и скроллбаром
     frame_canvas = Frame(tab3, bg=PRIMARY_COLOR)
@@ -57,13 +58,37 @@ def create_prices_tab(notebook, window):
 
     inner_frame.bind("<Configure>", update_scroll_region)
 
+    def load_prices():
+        """Загружает данные из файла и убирает лишние нули после запятой."""
+        prices = {}
+        try:
+            with open(FILENAME, "r", encoding="UTF-8") as file:
+                for line in file:
+                    key, value = line.strip().split(":", 1)
+                    try:
+                        num_value = float(value)
+                        if num_value.is_integer():
+                            value = str(int(num_value))  # Преобразуем в целое, если возможно
+                        else:
+                            value = str(num_value)  # Иначе оставляем как есть
+                    except ValueError:
+                        pass  # Если не число, оставляем строку как есть
+                    prices[key] = value
+        except FileNotFoundError:
+            pass  # Если файла нет, возвращаем пустой словарь
+        return prices
+
     def save_prices():
         """Сохраняет данные из полей ввода в файл."""
         new_prices = {}
 
-        for row in rows:
-            name = row[0].get().strip()
-            price = row[1].get().strip()
+        for row_frame in inner_frame.winfo_children():
+            widgets = row_frame.winfo_children()
+            if len(widgets) < 2:
+                continue  # Пропускаем некорректные строки
+
+            name = widgets[0].get().strip()
+            price = widgets[1].get().strip()
 
             if not name or not price:
                 messagebox.showerror("Ошибка", "Все поля должны быть заполнены!")
@@ -71,9 +96,18 @@ def create_prices_tab(notebook, window):
 
             new_prices[name] = price
 
+        # Записываем в файл
         with open(FILENAME, "w", encoding="UTF-8") as file:
             for key, value in new_prices.items():
                 file.write(f"{key}:{value}\n")
+
+        update_main_tab()
+        clear_entries()
+
+    def delete_entry(row_frame):
+        """Удаляет строку из интерфейса и обновляет файл."""
+        row_frame.destroy()
+        save_prices()  # После удаления сразу пересохраняем файл
 
     def add_entry(name="", price=""):
         """Добавляет новую строку."""
@@ -88,10 +122,13 @@ def create_prices_tab(notebook, window):
         price_entry.pack(side=LEFT, padx=5)
         price_entry.insert(0, price)
 
-        rows.append((name_entry, price_entry))
+        delete_button = Button(row_frame, text="Удалить", font=("Consolas", 12), width=10, bg="#E64961", fg="#ffffff",
+                               activebackground="#D63E50", command=lambda: delete_entry(row_frame))
+        delete_button.pack(side=RIGHT, padx=5)
+
         update_scroll_region()
 
-    # Загружаем данные из файла и создаём строки
+    # Загружаем данные и создаём строки
     prices = load_prices()
     for key, value in prices.items():
         add_entry(key, value)
@@ -102,10 +139,12 @@ def create_prices_tab(notebook, window):
 
     add_button = Button(button_frame, font=("Consolas", 12), text="Добавить запись", width=22, bg="#E64961",
                         fg="#ffffff", activebackground="#D63E50", command=lambda: add_entry())
+    apply_button_theme(add_button)
     add_button.pack(side=LEFT, padx=5)
 
     save_button = Button(button_frame, font=("Consolas", 12), text="Сохранить", width=22, bg="#E64961",
                          fg="#ffffff", activebackground="#D63E50", command=save_prices)
+    apply_button_theme(save_button)
     save_button.pack(side=LEFT, padx=5)
 
     return tab3

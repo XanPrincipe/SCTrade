@@ -1,5 +1,8 @@
 from tkinter import *
 from tkinter.ttk import Combobox, Notebook
+
+from schedule import clear
+
 from utils2 import update_sum, apply_theme, apply_button_theme, open_window_calculator, load_data_from_file,save_data_to_file
 import pyperclip
 
@@ -22,6 +25,7 @@ entries = []
 
 
 def create_main_tab(notebook, window, copybook):
+    global prices, combobox_values
 
     tab1 = Frame(notebook, bg=PRIMARY_COLOR)
     notebook.add(tab1, text='Главная')
@@ -110,8 +114,27 @@ def create_main_tab(notebook, window, copybook):
     def clear_entries():
         for entry in entries:
             entry.delete(0, END)
+        for combobox in comboboxes:
+            combobox.set("")
         update_sum()
+        update_main_tab()
+
+    def update_main_tab():
+        global prices, combobox_values
+        prices = load_data_from_file(data_file)  # Загружаем обновлённые данные
+        combobox_values = list(prices.keys())  # Обновляем список товаров
+
+        # Обновляем Combobox
+        for combobox in comboboxes:
+            combobox["values"] = combobox_values
+
+        # Обновляем Entry (если они соответствуют обновлённым товарам)
+        for combobox, entry in zip(comboboxes, entries):
+            selected_item = combobox.get()
+            if selected_item in prices:
+                entry.delete(0, END)
+                entry.insert(0, prices[selected_item])
 
     save_data_to_file(data_file,prices)
 
-    return tab1
+    return tab1, update_main_tab, clear_entries
